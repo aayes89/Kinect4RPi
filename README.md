@@ -4,7 +4,7 @@ NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+.
 # How to use
 Starts:
 - clone this repository
-- enter `sudo npm install express node-webcam`
+- enter `sudo npm install express node-webcam fluent-ffmpeg`
 - enter `sudo apt install fswebcam`
  
 Way 1:
