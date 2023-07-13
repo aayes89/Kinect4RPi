@@ -36,14 +36,15 @@ app.get('/video', (req,res)=>{
     'Connection': 'keep-alive',
     'Transfer-Encoding': 'chunked',
 });
-const ffmpegCommand = ffmpeg()
+/*const ffmpegCommand = ffmpeg()
     .input(webcamOptions.device)
     .inputFormat('v4l2')
     .inputOptions(['-s ' + webcamOptions.width + 'x'+ webcamOptions.height])
     .outputOptions('-preset ultrafast')
     .outputFormat('mp4')
     .videoCodec('copy')
-    .outputFPS(30);
+    .outputFPS(30);*/
+  const ffmpegCommand = ffmpeg(webcamOptions.device).inputFPS(29.7);
 
   ffmpegCommand.on('error', (err) => {
     console.error('Video broadcast error:', err.message);
