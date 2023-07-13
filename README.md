@@ -25,3 +25,7 @@ Run these commands separately:
 Ends:
 - check if `/dev/video0` exists and then enter `sudo node server.js`
 - go to http://localhost:443/video to view a real-time captured image from the Kinect.
+  
+# How does it work
+
+Generate a JPG image with fswebcam and post it to the URL.
