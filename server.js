@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const NodeWebcam = require('node-webcam');
 
-// Configuración de la cámara
+// camera configuration
 const webcamOptions = {
   width: 640,
   height: 480,
@@ -12,7 +12,7 @@ const webcamOptions = {
 };
 const Webcam = NodeWebcam.create(webcamOptions);
 
-// Ruta para obtener la imagen en tiempo real
+// Path for the real-time image
 app.get('/video', (req, res) => {
   Webcam.capture('image', (err, buffer) => {
     if (err) {
@@ -27,15 +27,15 @@ app.get('/video', (req, res) => {
   });
 });
 
-// Iniciar el servidor
-const server = app.listen(443, () => {
-  console.log('Servidor escuchando en el puerto 443');
+// starts server
+const server = app.listen(8080, () => {
+  console.log('Listening on: http://localhost:8080');
 });
 
-// Manejar la interrupción del servidor
+// handle server interrupts
 process.on('SIGINT', () => {
   server.close(() => {
-    console.log('Servidor detenido');
+    console.log('Server stoped');
     process.exit();
   });
 });
