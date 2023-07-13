@@ -42,7 +42,7 @@ const ffmpegCommand = ffmpeg()
     .inputOptions(['-s ' + webcamOptions.width + 'x'+ webcamOptions.height])
     .outputOptions('-preset ultrafast')
     .outputFormat('mp4')
-    .videoCodec('libx264')
+    .videoCodec('copy')
     .outputFPS(30);
 
   ffmpegCommand.on('error', (err) => {
