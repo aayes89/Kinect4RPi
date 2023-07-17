@@ -1,3 +1,4 @@
+// Do not run this code
 const express = require('express');
 const app = express();
 const NodeWebcam = require('node-webcam');
