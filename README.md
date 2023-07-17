@@ -25,7 +25,7 @@ Run these commands separately:
 
 Ends:
 - generate the sqlite database for the server, change the data on script for your needs. The password need to be on Base64 to work with the server auth. Use atob("password") on Web browser console to quick conversion and then put into database.
-- check if `/dev/video0` exists and then enter `sudo node server.js`
+- check if `/dev/video0` exists and then enter `sudo node run.js`
 - go to http://ip_host:443/ then enter the password to access the page where the Kinect real-time transmission is shown.
   
 # How does it work
