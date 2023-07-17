@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Inserta datos de ejemplo en la tabla de usuarios
-INSERT INTO users (username, password) VALUES ('slam', 'YXllc3BlcmRp');
+INSERT INTO users (username, password) VALUES ('admin', '¥«,Â\u008aÝ');
 EOF
