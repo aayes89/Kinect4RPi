@@ -7,7 +7,8 @@ Starts:
 - clone this repository
 - enter `sudo npm install express node-webcam fluent-ffmpeg base-64 sqlite3 fs path cheerio`
 - enter `sudo apt install fswebcam motion`
-- enter `sudo chmod +x createDB.sh`
+- enter `sudo chmod +x createDB.sh` change the data in the script according to your needs. The password must be in Base64 to work with server authentication. Use atob("desired password") in the web browser console for a quick conversion and then put it in the script to generate the database in sqlite3.
+- enter `sudo sh createDB.sh`, if there's an error, create a directory with `sudo mkdir BD` on server root path.
 - enter `sudo service motion start` and check with `service motion status` if there any problem just give root access permission with `sudo chmod -R 777 /var/log/motion`
 - enter `motion start` and check on web browser if there's a live broadcast on `http://ip_raspberry:8081`
  
@@ -27,7 +28,7 @@ Run these commands separately:
 - `modprobe gspca_kinect`
 
 Ends:
-- generate the sqlite database for the server typing `sudo sh createDB.sh`, change the data in the script according to your needs. The password must be in Base64 to work with server authentication. Use atob("desired password") in the web browser console for a quick conversion and then put it in the script to generate the database in sqlite3.
+- 
 - check if `/dev/video0` exists and then enter `sudo node run.js`
 - go to http://ip_host:443/ then enter the password to access the page where the Kinect real-time transmission is shown.
   
