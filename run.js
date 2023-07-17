@@ -1,8 +1,5 @@
-
-
 const express = require('express');
 const app = express();
-//const http = require('http');
 const b64 = require('base-64');
 const bd = require('sqlite3');
 const fs = require('fs');
@@ -31,13 +28,11 @@ app.use(express.static('www'));
 
 app.post('/login', (req, res) => {
   const password = req.body.password;
-
-writeToLog('The captured is: '+password);;
-
+  writeToLog('The captured is: '+password);
   const db = new bd.Database('BD/db.db', (err) => {
     if (err) {
-      console.error(err.message);
-writeToLog(err.message + ': Error en el servidor sqlite3');
+      	console.error(err.message);
+	writeToLog(err.message + ': Error en el servidor sqlite3');
       return res.status(500).send('Error en el servidor');
     }
 
@@ -47,17 +42,17 @@ writeToLog(err.message + ': Error en el servidor sqlite3');
 
       if (err) {
         console.error(err.message);
-writeToLog(err.message);
+	writeToLog(err.message);
         return res.status(500).send('Error en el servidor');
       }
 
       if (!row) {
-writeToLog('No se encontró el uusuario');
+	writeToLog('No se encontró el usuario');
         return res.send('No se encontró el usuario');
       }
-writeToLog('DB pass: '+row.password);
-      const encodedPassword = row.password;
-writeToLog('Encoded :'+encodedPassword);
+	writeToLog('DB pass: '+row.password);
+      	const encodedPassword = row.password;
+	writeToLog('Encoded :'+encodedPassword);
       if (password === b64.decode(encodedPassword)) {
         res.redirect('cam.html');
       } else {
@@ -74,7 +69,7 @@ app.get('/capture', (req, res) => {
     Webcam.capture('image', (err, buffer) => {
       if (err) {
         console.error(err);
-writeToLog(err + 'Error capturing image');
+	writeToLog(err + 'Error capturing image');
         res.status(500).send('Error capturing image');
         return;
       }
@@ -121,18 +116,19 @@ writeToLog('Invalid type parameter');
 
 // starts server
  const server = app.listen(port, () => {
-	writeToLog('Listening on port: '+port);
-	console.log('Listening on: http://localhost:'+port);
+	 writeToLog('Listening on port: '+port);
+	 console.log('Listening on: http://localhost:'+port);
  });
 
 // handle server interrupts
 process.on('SIGINT', () => {
   server.close(() => {
-writeToLog('Server stoped');
-    console.log('Server stopped');
-    process.exit();
+	writeToLog('Server stoped');
+   	console.log('Server stopped');
+    	process.exit();
   });
 });
+
 function writeToLog(message) {
   const logFilePath = 'logs.txt';
 
