@@ -1,14 +1,18 @@
+
 const express = require('express');
-const app = express();
-const b64 = require('base-64');
-const bd = require('sqlite3');
-const fs = require('fs');
+const session = require('express-session');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const bd = require('sqlite3').verbose();
 const path = require('path');
+const crypto = require('crypto');
+const b64 = require('base-64');
+const fs = require('fs');
 const NodeWebcam = require('node-webcam');
 const ffmpeg = require('fluent-ffmpeg');
+
 const motionRuta = "http://localhost:8081";
 const port = 443;
-//const outputServer ='http://localhost:443/capture?type=video.mp4';
 
 // camera configuration
 const webcamOptions = {
@@ -20,56 +24,103 @@ const webcamOptions = {
 };
 const Webcam = NodeWebcam.create(webcamOptions);
 
+const app = express();
 
-app.use(express.urlencoded({extended: true}));
-// Path for real-time image or video capture
-app.use(express.static('www'));
-//app.use(express.static(path.join(__dirname,'www')));
+// Generar una clave secreta aleatoria
+function generateRandomSecret() {
+  return crypto.randomBytes(32).toString('hex');
+}
 
-app.post('/login', (req, res) => {
-  const password = req.body.password;
-  writeToLog('The captured is: '+password);
-  const db = new bd.Database('BD/db.db', (err) => {
-    if (err) {
-      	console.error(err.message);
-	writeToLog(err.message + ': Error en el servidor sqlite3');
-      return res.status(500).send('Error en el servidor');
-    }
+const secret = generateRandomSecret();
 
-    const query = `SELECT password FROM users`;
-    db.get(query, [], (err, row) => {
-      db.close();
+// Configurar el almacenamiento de sesiones
+app.use(session({
+  secret: secret,
+  resave: false,
+  saveUninitialized: false
+}));
+
+app.use(express.urlencoded({ extended: true }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// SQLite database configuration
+const dbPath = path.join(__dirname, 'BD', 'db.db');
+const db = new bd.Database(dbPath);
+
+// Configurar la estrategia de autenticación local
+passport.use(new LocalStrategy(
+  (username, password, done) => {
+    const query = `SELECT password FROM users WHERE username = ?`;
+    db.get(query, [username], (err, row) => {
 
       if (err) {
-        console.error(err.message);
-	writeToLog(err.message);
-        return res.status(500).send('Error en el servidor');
+        return done(err);
       }
 
       if (!row) {
-	writeToLog('No se encontró el usuario');
-        return res.send('No se encontró el usuario');
+        console.log(`Intento de inicio de sesión fallido para el usuario: ${username}`);
+        return done(null, false, { message: 'Usuario no encontrado' });
       }
-	writeToLog('DB pass: '+row.password);
-      	const encodedPassword = row.password;
-	writeToLog('Encoded :'+encodedPassword);
-      if (password === b64.decode(encodedPassword)) {
-        res.redirect('cam.html');
+
+      const dbPassword = row.password;
+
+      if (password === b64.decode(dbPassword)) {
+        console.log(`Inicio de sesión exitoso para el usuario: ${username}`);
+        return done(null, { username: username });
       } else {
-        res.send('Contraseña incorrecta. Intenta nuevamente.');
+        console.log(`Intento de inicio de sesión fallido para el usuario: ${username}`);
+        return done(null, false, { message: 'Contraseña incorrecta' });
       }
     });
-  });
+  }
+));
+
+passport.serializeUser((user, done) => {
+  done(null, user.username);
 });
 
-app.get('/capture', (req, res) => {
+passport.deserializeUser((username, done) => {
+  done(null, { username: username });
+});
+
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/cam.html', // Redirigir a la página cam.html si el inicio de sesión es exitoso
+  failureRedirect: '/login', // Redirigir a la página de inicio de sesión si el inicio de sesión falla
+}));
+
+// Función para asegurar que el usuario está autenticado
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  } else {
+    res.redirect('/login'); // Redirigir a la página de inicio de sesión si no está autenticado
+  }
+}
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'index.html'));
+});
+
+app.get('js/scripts.js', (req, res) => {
+  res.sendFile(path.join(__dirname,'www/js','scripts.js'));
+});
+
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'index.html'));
+});
+
+app.get('/cam.html', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'cam.html'));
+});
+
+app.get('/capture', ensureAuthenticated, (req, res) => {
   const { type } = req.query;
 
   if (type === 'image') {
     Webcam.capture('image', (err, buffer) => {
       if (err) {
         console.error(err);
-	writeToLog(err + 'Error capturing image');
+        writeToLog(err + 'Error capturing image');
         res.status(500).send('Error capturing image');
         return;
       }
@@ -80,52 +131,49 @@ app.get('/capture', (req, res) => {
       res.end(buffer);
     });
   } else if (type === 'video') {
-	res.sendFile(path.join(__dirname, 'www', 'cam.html'))
-  /*  res.writeHead(200, {
+    res.writeHead(200, {
       'Content-Type': 'video/mp4',
       'Connection': 'keep-alive',
       'Transfer-Encoding': 'chunked',
     });
 
-ffmpeg(motionRuta)
-.inputFormat('mjpeg')
-//.inputOptions('-s '+webcamOptions.width+'x'+webcamOptions.height)
-//.output(outputServer)
-.outputOptions(['-f mpegts','-codec:v mpeg1video','-b:v 800k','-r 30','-s 640x480'])
-//'-c:v','h264_omx')
-.output('pipe',{end: true})
-.on('data', (data)=>{
-	app.emit('motion-stream',data);
-})
-.on('end', ()=>{
-	console.log('Ha finalizado');
-	writeToLog('Ha finalizado');
-})
-.on('start', cmdLine => console.log('start',cmdLine))
-.on('error', error=>console.log('error',error))
-.on('codecData',codec=>console.log('codecData',codec))
-.on('stderr', stderr=>console.log('stderr',stderr))
-.run();
-*/
-
+    ffmpeg(motionRuta)
+      .inputFormat('mjpeg')
+      .outputOptions(['-f mpegts', '-codec:v mpeg1video', '-b:v 800k', '-r 30', '-s 640x480'])
+      .output('pipe', { end: true })
+      .on('data', (data) => {
+        app.emit('motion-stream', data);
+      })
+      .on('end', () => {
+        console.log('Ha finalizado');
+        writeToLog('Ha finalizado');
+      })
+      .on('start', cmdLine => console.log('start', cmdLine))
+      .on('error', error => console.log('error', error))
+      .on('codecData', codec => console.log('codecData', codec))
+      .on('stderr', stderr => console.log('stderr', stderr))
+      .run();
   } else {
-writeToLog('Invalid type parameter');
+    writeToLog('Invalid type parameter');
     res.status(400).send('Invalid type parameter');
   }
 });
 
-// starts server
- const server = app.listen(port, () => {
-	 writeToLog('Listening on port: '+port);
-	 console.log('Listening on: http://localhost:'+port);
- });
+// Inicia el servidor
+const server = app.listen(port, () => {
+  console.log('Servidor en funcionamiento en http://localhost:' + port);
+});
 
-// handle server interrupts
+// Manejar interrupciones del servidor
 process.on('SIGINT', () => {
-  server.close(() => {
-	writeToLog('Server stoped');
-   	console.log('Server stopped');
-    	process.exit();
+  db.close((err) => {
+    if (err) {
+      console.error('Error al cerrar la base de datos:', err);
+    }
+    server.close(() => {
+      console.log('Servidor detenido');
+      process.exit();
+    });
   });
 });
 
