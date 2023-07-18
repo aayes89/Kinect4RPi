@@ -10,11 +10,12 @@ const b64 = require('base-64');
 const fs = require('fs');
 const NodeWebcam = require('node-webcam');
 const ffmpeg = require('fluent-ffmpeg');
+const bodyParser = require('body-parser');
 
 const motionRuta = "http://localhost:8081";
 const port = 443;
 
-// camera configuration
+// Camera configuration
 const webcamOptions = {
   width: 640,
   height: 480,
@@ -26,14 +27,10 @@ const Webcam = NodeWebcam.create(webcamOptions);
 
 const app = express();
 
-// Generar una clave secreta aleatoria
-function generateRandomSecret() {
-  return crypto.randomBytes(32).toString('hex');
-}
+// Generate a random secret key for session storage
+const secret = crypto.randomBytes(32).toString('hex');
 
-const secret = generateRandomSecret();
-
-// Configurar el almacenamiento de sesiones
+// Configure session storage
 app.use(session({
   secret: secret,
   resave: false,
@@ -48,29 +45,31 @@ app.use(passport.session());
 const dbPath = path.join(__dirname, 'BD', 'db.db');
 const db = new bd.Database(dbPath);
 
-// Configurar la estrategia de autenticación local
+// Configure local authentication strategy
 passport.use(new LocalStrategy(
   (username, password, done) => {
     const query = `SELECT password FROM users WHERE username = ?`;
     db.get(query, [username], (err, row) => {
-
       if (err) {
         return done(err);
       }
 
       if (!row) {
-        console.log(`Intento de inicio de sesión fallido para el usuario: ${username}`);
-        return done(null, false, { message: 'Usuario no encontrado' });
+        console.log(`Failed login attempt for user: ${username}`);
+        return done(null, false, { message: 'User not found' });
       }
 
       const dbPassword = row.password;
+      console.log('Password in database: ' + dbPassword);
+      console.log('Decoded password: ' + b64.decode(dbPassword));
+      console.log('Password entered: ' + password);
 
       if (password === b64.decode(dbPassword)) {
-        console.log(`Inicio de sesión exitoso para el usuario: ${username}`);
+        console.log(`Successful login for user: ${username}`);
         return done(null, { username: username });
       } else {
-        console.log(`Intento de inicio de sesión fallido para el usuario: ${username}`);
-        return done(null, false, { message: 'Contraseña incorrecta' });
+        console.log(`Failed login attempt for user: ${username}`);
+        return done(null, false, { message: 'Incorrect password' });
       }
     });
   }
@@ -85,24 +84,28 @@ passport.deserializeUser((username, done) => {
 });
 
 app.post('/login', passport.authenticate('local', {
-  successRedirect: '/cam.html', // Redirigir a la página cam.html si el inicio de sesión es exitoso
-  failureRedirect: '/login', // Redirigir a la página de inicio de sesión si el inicio de sesión falla
+  successRedirect: '/cam.html',
+  failureRedirect: '/login',
 }));
 
-// Función para asegurar que el usuario está autenticado
+// Function to ensure the user is authenticated
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   } else {
-    res.redirect('/login'); // Redirigir a la página de inicio de sesión si no está autenticado
+    res.redirect('/login');
   }
 }
+
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'www', 'index.html'));
 });
 
-app.get('js/scripts.js', (req, res) => {
-  res.sendFile(path.join(__dirname,'www/js','scripts.js'));
+app.get('/js/scripts.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'js', 'scripts.js'));
+});
+app.get('/js/crud.js', (req, res) => {
+  res.sendFile(path.join(__dirname, 'www', 'js', 'crud.js'));
 });
 
 app.get('/login', (req, res) => {
@@ -111,6 +114,11 @@ app.get('/login', (req, res) => {
 
 app.get('/cam.html', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'www', 'cam.html'));
+});
+
+
+app.get('/configs', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'www','backend', 'crud.html'));
 });
 
 app.get('/capture', ensureAuthenticated, (req, res) => {
@@ -145,8 +153,8 @@ app.get('/capture', ensureAuthenticated, (req, res) => {
         app.emit('motion-stream', data);
       })
       .on('end', () => {
-        console.log('Ha finalizado');
-        writeToLog('Ha finalizado');
+        console.log('Finished');
+        writeToLog('Finished');
       })
       .on('start', cmdLine => console.log('start', cmdLine))
       .on('error', error => console.log('error', error))
@@ -159,19 +167,75 @@ app.get('/capture', ensureAuthenticated, (req, res) => {
   }
 });
 
-// Inicia el servidor
-const server = app.listen(port, () => {
-  console.log('Servidor en funcionamiento en http://localhost:' + port);
+// Route to get all users
+app.get('/users', (req, res) => {
+  const query = 'SELECT id, username FROM users';
+  db.all(query, [], (err, rows) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error fetching users' });
+      return;
+    }
+    res.json(rows);
+  });
 });
 
-// Manejar interrupciones del servidor
+// Route to create a new user
+app.post('/users', (req, res) => {
+  const { username, password } = req.body;
+  const query = 'INSERT INTO users (username, password) VALUES (?, ?)';
+  db.run(query, [username,b64.encode(password)], (err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error creating user' });
+      return;
+    }
+    res.json({ message: 'User created successfully' });
+  });
+});
+
+// Route to update a user by ID
+app.put('/users/:id', (req, res) => {
+  const id = req.params.id;
+  const { username, password } = req.body;
+  const query = 'UPDATE users SET username = ?, password = ? WHERE id = ?';
+  db.run(query, [username, b64.encode(password), id], (err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error updating user' });
+      return;
+    }
+    res.json({ message: 'User updated successfully' });
+  });
+});
+
+// Route to delete a user by ID
+app.delete('/users/:id', (req, res) => {
+  const id = req.params.id;
+  const query = 'DELETE FROM users WHERE id = ?';
+  db.run(query, [id], (err) => {
+    if (err) {
+      console.error(err);
+      res.status(500).json({ error: 'Error deleting user' });
+      return;
+    }
+    res.json({ message: 'User deleted successfully' });
+  });
+});
+
+// Start the server
+const server = app.listen(port, () => {
+  console.log('Server is running at http://localhost:' + port);
+});
+
+// Handle server interruptions
 process.on('SIGINT', () => {
   db.close((err) => {
     if (err) {
-      console.error('Error al cerrar la base de datos:', err);
+      console.error('Error closing the database:', err);
     }
     server.close(() => {
-      console.log('Servidor detenido');
+      console.log('Server stopped');
       process.exit();
     });
   });
@@ -182,7 +246,7 @@ function writeToLog(message) {
 
   fs.appendFile(logFilePath, message + '\n', (err) => {
     if (err) {
-      console.error('Error al escribir en el archivo de registro:', err);
+      console.error('Error writing to log file:', err);
     }
   });
 }
