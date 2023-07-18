@@ -1,6 +1,6 @@
 # Kinect4RPi
 
-NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+.
+NodeJS server to capture Xbox 360 Kinect in real time with a Raspberry Pi 3b+.
 
 # How to use
 Starts:
