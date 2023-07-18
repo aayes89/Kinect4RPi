@@ -1,6 +1,7 @@
 # Kinect4RPi
 
-NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+ with auth and a backend with CRUD operations added.
+NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+.
+
 # How to use
 Starts:
 - clone this repository
@@ -28,9 +29,22 @@ Run these commands separately:
 
 Ends:
 - check if `/dev/video0` exists and then enter `sudo node run.js`
-- go to http://ip_raspberry_host:443/ then enter the "password" to access the page where the Kinect real-time transmission is shown.
-- go to http://ip_raspberry_host:443/capture?type={image|video} if you want one of the behaviors only
-  
+- go to http://ip_raspberry_host:443/ then enter the "user" and "password" to access the page where the Kinect real-time transmission is shown.
+- to get access to the bd just type http://ip_raspberry_host:443/configs
+- go to http://ip_raspberry_host:443/capture?type={image|video} if you want one of the behaviors (Test only, but not necessary)
+
+# Achievements
+* Allows you to view images from the Kinect camera in a web browser.
+* implements a security system to prevent unwanted access.
+* Allow CRUD operations on local Sqlite3 database.
+
+# TODO
+* Capture and stream audio from the Kinect's microphone to a web browser.
+* Send audio from the web browser to the speaker connected to a Raspberry or a PC.
+* Improve the security system.
+* Improve user interface.
+* Organize the structure of this project to comply with current programming models.
+
 # How does it work
 
 Generate a JPG image with fswebcam and post it to the URL.
