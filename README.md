@@ -1,11 +1,10 @@
 # Kinect4RPi
 
-NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+ with auth.
-
+NodeJS server to capture Xbox 360 Kinect in real time on a Raspberry Pi 3b+ with auth and a backend with CRUD operations added.
 # How to use
 Starts:
 - clone this repository
-- enter `sudo npm install express express-session passport passport-local node-webcam fluent-ffmpeg base-64 sqlite3 fs path`
+- enter `sudo npm install express express-session passport passport-local node-webcam fluent-ffmpeg base-64 crypto sqlite3 fs path body-parser`
 - enter `sudo apt install fswebcam motion -y`
 - enter `sudo chmod +x createDB.sh` change the data in the script according to your needs. The password must be in Base64 to work with server authentication. Use atob("desired password") in the web browser console for a quick conversion and then put it in the script to generate the database in sqlite3.
 - enter `sudo sh createDB.sh`, if there's an error, create a directory with `sudo mkdir BD` on server root path and run again.
