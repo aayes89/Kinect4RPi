@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Administrador de Sistema</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/css/bootstrap.min.css">
+    <style>
+        body {
+            background: url('https://wallpaperaccess.com/full/4893694.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 20px;
+        }
+
+        .user-table {
+            margin-bottom: 20px;
+        }
+
+        .user-form {
+            display: none;
+            margin-bottom: 20px;
+        }
+
+        .user-form.show {
+            display: block;
+        }
+
+        th {
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        th,
+        td {
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="user-table">
+            <table class="table table-bordered table-dark">
+                <thead>
+                    <tr>
+                        <th scope="col">ID</th>
+                        <th scope="col">Username</th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="userListTableBody">
+                    <!-- User data will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <button id="showCreateFormBtn" class="btn btn-primary">Add User</button>
+
+        <div class="user-form" id="createForm">
+            <h3>Create User</h3>
+            <form>
+                <div class="mb-3">
+                    <label for="createUsername" class="form-label">Username:</label>
+                    <input type="text" id="createUsername" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="createPassword" class="form-label">Password:</label>
+                    <input type="password" id="createPassword" class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="createUser()">Create</button>
+            </form>
+        </div>
+
+        <div class="user-form" id="updateForm">
+            <h3>Update User</h3>
+            <form>
+                <div class="mb-3">
+                    <label for="updateUserId" class="form-label">User ID:</label>
+                    <input type="text" id="updateUserId" class="form-control" readonly>
+                </div>
+                <div class="mb-3">
+                    <label for="updateUsername" class="form-label">Username:</label>
+                    <input type="text" id="updateUsername" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="updatePassword" class="form-label">Password:</label>
+                    <input type="password" id="updatePassword" class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="updateUser()">Update</button>
+            </form>
+        </div>
+
+        <div class="user-form" id="deleteForm">
+            <h3>Delete User</h3>
+            <form>
+                <div class="mb-3">
+                    <label for="deleteUserId" class="form-label">User ID:</label>
+                    <input type="text" id="deleteUserId" class="form-control" required>
+                </div>
+                <button type="button" class="btn btn-danger" onclick="deleteUser()">Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="./js/scripts.js"></script>
+</body>
+</html>
